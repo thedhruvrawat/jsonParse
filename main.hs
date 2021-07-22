@@ -68,8 +68,28 @@ jsonBool = f <$> (stringP "true" <|> stringP "false")
           --this should never happen
           f _       = undefined
 
+--Parsing numbers
+spanP :: (Char -> Bool) -> Parser String
+spanP f = 
+    Parser $ \input -> 
+        let (token, rest) = span f input 
+            in Just (rest, token)
+
+notNull :: Parser [a] -> Parser [a]
+notNull (Parser p) = 
+    Parser $ \input -> do
+        (input', xs) <- p input
+        if null xs
+            then Nothing
+            else Just (input', xs)
+
+
+jsonNumber :: Parser JsonValue
+jsonNumber = f <$> spanP isDigit 
+    where f ds = JsonNumber $ read ds
+
 jsonValue :: Parser JsonValue
-jsonValue = undefined
+jsonValue = jsonNull <|> jsonBool <|> jsonNumber
 
 main :: IO ()
 main = undefined 
