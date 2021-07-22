@@ -3,6 +3,8 @@
 module Main where
 
 import Data.Char
+import Control.Applicative
+
 --defining Abstract Syntax Tree
 data JsonValue 
     = JsonNull
@@ -34,6 +36,13 @@ instance Applicative Parser where
          (input'', a) <- p2 input'
          Just (input'', f a)
 
+--Proving parser is alternative
+instance Alternative Parser where
+    empty = Parser $ \_ -> Nothing
+    (Parser p1) <|> (Parser p2) = 
+        Parser $ \input -> p1 input <|> p2 input 
+        --take input into first parser, if it fails, put same input into second parser and try to parse that
+
 --Parses single char
 charP :: Char -> Parser Char 
 charP x = Parser f
@@ -50,6 +59,14 @@ stringP = sequenceA . map charP --will only work if we prove to compiler that pa
 --Parsing null
 jsonNull :: Parser JsonValue
 jsonNull = (\_ -> JsonNull) <$> stringP "null"
+
+--Parsing bool
+jsonBool :: Parser JsonValue
+jsonBool = f <$> (stringP "true" <|> stringP "false")
+    where f "true"  = JsonBool True
+          f "false" = JsonBool False
+          --this should never happen
+          f _       = undefined
 
 jsonValue :: Parser JsonValue
 jsonValue = undefined
