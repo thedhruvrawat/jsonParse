@@ -49,7 +49,7 @@ stringP = sequenceA . map charP --will only work if we prove to compiler that pa
 
 --Parsing null
 jsonNull :: Parser JsonValue
-jsonNull = undefined 
+jsonNull = (\_ -> JsonNull) <$> stringP "null"
 
 jsonValue :: Parser JsonValue
 jsonValue = undefined
