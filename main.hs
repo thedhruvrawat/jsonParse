@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -Wno-deferred-type-errors #-}
-{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 module Main where
 
 import Data.Char
@@ -43,6 +41,11 @@ instance Alternative Parser where
         Parser $ \input -> p1 input <|> p2 input 
         --take input into first parser, if it fails, put same input into second parser and try to parse that
 
+
+--Parsing null
+jsonNull :: Parser JsonValue
+jsonNull = (\_ -> JsonNull) <$> stringP "null"
+
 --Parses single char
 charP :: Char -> Parser Char 
 charP x = Parser f
@@ -56,9 +59,6 @@ charP x = Parser f
 stringP :: String -> Parser String --gave a list of parsers, we want a parser of lists, need to turn it inside out
 stringP = sequenceA . map charP --will only work if we prove to compiler that parser is applicative
 
---Parsing null
-jsonNull :: Parser JsonValue
-jsonNull = (\_ -> JsonNull) <$> stringP "null"
 
 --Parsing bool
 jsonBool :: Parser JsonValue
@@ -85,7 +85,7 @@ notNull (Parser p) =
 
 
 jsonNumber :: Parser JsonValue
-jsonNumber = f <$> spanP isDigit 
+jsonNumber = f <$> notNull (spanP isDigit)
     where f ds = JsonNumber $ read ds
 
 --Parsing string
@@ -115,6 +115,12 @@ jsonObject = JsonObject <$> (charP '{' *> ws *> sepBy (ws *> charP ',' <* ws) pa
 
 jsonValue :: Parser JsonValue
 jsonValue = jsonNull <|> jsonBool <|> jsonNumber <|> jsonString <|> jsonArray <|> jsonObject
+
+--Parse a JSON file
+parseFile :: FilePath -> Parser a -> IO (Maybe a)
+parseFile fileName parser = do
+    input <- readFile fileName
+    return (snd <$> runParser parser input)
 
 main :: IO ()
 main = undefined 
