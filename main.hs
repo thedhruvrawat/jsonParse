@@ -95,8 +95,20 @@ stringLiteral = spanP (/= '"') --doesn't support escape
 jsonString :: Parser JsonValue
 jsonString = JsonString <$> (charP '"' *> stringLiteral <* charP '"')
 
+--Parsing arrays
+ws :: Parser String --whitespace
+ws = spanP isSpace 
+
+sepBy :: Parser a -> Parser b -> Parser [b] --separator
+sepBy sep element = (:) <$> element <*> many (sep *> element) <|> pure []
+
+jsonArray :: Parser JsonValue
+jsonArray = JsonArray <$> (charP '[' *> ws *> elements <* ws <* charP ']')
+    where 
+        elements = sepBy (ws *> charP ',' <* ws) jsonValue
+
 jsonValue :: Parser JsonValue
-jsonValue = jsonNull <|> jsonBool <|> jsonNumber <|> jsonString
+jsonValue = jsonNull <|> jsonBool <|> jsonNumber <|> jsonString <|> jsonArray
 
 main :: IO ()
 main = undefined 
