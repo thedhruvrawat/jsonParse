@@ -90,10 +90,10 @@ jsonNumber = f <$> spanP isDigit
 
 --Parsing string
 stringLiteral :: Parser String
-stringLiteral = spanP (/= '"') --doesn't support escape 
+stringLiteral = charP '"' *> spanP (/= '"')  <* charP '"' --doesn't support escape 
 
 jsonString :: Parser JsonValue
-jsonString = JsonString <$> (charP '"' *> stringLiteral <* charP '"')
+jsonString = JsonString <$> stringLiteral
 
 --Parsing arrays
 ws :: Parser String --whitespace
@@ -107,8 +107,14 @@ jsonArray = JsonArray <$> (charP '[' *> ws *> elements <* ws <* charP ']')
     where 
         elements = sepBy (ws *> charP ',' <* ws) jsonValue
 
+--Parsing objects
+jsonObject :: Parser JsonValue
+jsonObject = JsonObject <$> (charP '{' *> ws *> sepBy (ws *> charP ',' <* ws) pair <* ws <* charP '}')
+  where
+    pair = liftA2 (,) (stringLiteral <* ws <* charP ':' <* ws) jsonValue
+
 jsonValue :: Parser JsonValue
-jsonValue = jsonNull <|> jsonBool <|> jsonNumber <|> jsonString <|> jsonArray
+jsonValue = jsonNull <|> jsonBool <|> jsonNumber <|> jsonString <|> jsonArray <|> jsonObject
 
 main :: IO ()
 main = undefined 
