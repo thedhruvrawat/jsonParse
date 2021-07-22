@@ -88,8 +88,15 @@ jsonNumber :: Parser JsonValue
 jsonNumber = f <$> spanP isDigit 
     where f ds = JsonNumber $ read ds
 
+--Parsing string
+stringLiteral :: Parser String
+stringLiteral = spanP (/= '"') --doesn't support escape 
+
+jsonString :: Parser JsonValue
+jsonString = JsonString <$> (charP '"' *> stringLiteral <* charP '"')
+
 jsonValue :: Parser JsonValue
-jsonValue = jsonNull <|> jsonBool <|> jsonNumber
+jsonValue = jsonNull <|> jsonBool <|> jsonNumber <|> jsonString
 
 main :: IO ()
 main = undefined 
